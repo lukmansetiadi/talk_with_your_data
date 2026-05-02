@@ -1,0 +1,15 @@
+google-genai
+python-dotenv
+mysql-connector-python
+streamlit
+pandas
+groq
+boto3
+tabulate
+python-docx
+plotly
+sqlalchemy
+redshift_connector
+sqlalchemy-redshift
+psycopg2-binary
+xlsxwriter
