@@ -7,6 +7,7 @@ It also includes a powerful **Deep Research Analysis** suite that allows you to 
 ## Features
 
 - **Natural Language to SQL**: Ask questions in plain English and get database results instantly.
+- **Multi-Query Execution**: Automatically detects and executes multiple semicolon-separated SQL queries in a single response, displaying each result set independently.
 - **Universal Multi-Database Support**: Thanks to `SQLAlchemy`, this app can connect to almost any SQL database. Currently configured connection strings support:
   - MySQL, Amazon Redshift, PostgreSQL, SQLite.
 - **Dynamic Chart Generation**: Generate interactive Plotly charts directly from your SQL results with a single click.

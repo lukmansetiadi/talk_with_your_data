@@ -18,8 +18,8 @@ echo 📦 Staging all changes...
 git add .
 
 REM Ask for a commit message or use a default one
-set /p commit_msg="📝 Enter commit message (leave blank for 'Feature: AI Query Recommendations, Default Templates, and Multi-Query Execution'): "
-if "!commit_msg!"=="" set commit_msg=Feature: AI Query Recommendations, Default Templates, and Multi-Query Execution
+set /p commit_msg="📝 Enter commit message (leave blank for 'Fix: Streamlit state management for prompt templates'): "
+if "!commit_msg!"=="" set commit_msg=Fix: Streamlit state management for prompt templates
 
 echo.
 echo 💾 Committing changes...

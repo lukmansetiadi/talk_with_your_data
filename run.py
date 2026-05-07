@@ -41,7 +41,7 @@ if 'edit_output_expanded' not in st.session_state:
 if 'edit_recommendation_expanded' not in st.session_state:
     st.session_state.edit_recommendation_expanded = False
 
-# Prompt session states
+# Prompt session states (these act as the keys for the st.text_area widgets)
 if "research_prompt_input_key" not in st.session_state:
     st.session_state.research_prompt_input_key = ""
 
@@ -51,7 +51,9 @@ if "output_research_prompt_input_key" not in st.session_state:
 if "recommendation_prompt_input_key" not in st.session_state:
     st.session_state.recommendation_prompt_input_key = ""
 
-# Functions to update prompts from templates
+# Functions to update prompts from templates. 
+# Because we are updating the session state that is tied to the widget key, 
+# Streamlit will automatically render the new value on the next cycle.
 def fill_research_prompt():
     st.session_state.research_prompt_input_key = RESEARCH_ANALYSIS_PROMPT_TEMPLATE
 
@@ -577,22 +579,26 @@ with st.sidebar:
                 "Ask the AI to analyze your saved research:",
                 placeholder=RESEARCH_ANALYSIS_PROMPT_TEMPLATE,
                 height=200,
-                value=st.session_state.research_prompt_input_key,
-                key="research_prompt_input_key_ui"
+                key="research_prompt_input_key"
             )
             
             if st.button("Run Analysis", use_container_width=True):
-                if research_prompt.strip():
-                    user_msg = f"**[Deep Research Analysis]**\n{research_prompt}"
+                # When running analysis, we directly pull from the widget's key in session state
+                active_prompt = st.session_state.research_prompt_input_key
+                
+                if active_prompt.strip():
+                    user_msg = f"**[Deep Research Analysis]**\n{active_prompt}"
                     st.session_state.messages.append({"role": "user", "content": user_msg})
                     with st.spinner(f"Analyzing with {selected_llm.capitalize()}..."):
-                        full_prompt = f"Here is the collected research data context:\n\n{research_content}\n\nBased ONLY on the data above, please answer the following request:\n{research_prompt}"
+                        full_prompt = f"Here is the collected research data context:\n\n{research_content}\n\nBased ONLY on the data above, please answer the following request:\n{active_prompt}"
                         analysis_result = analyze_with_llm(full_prompt, selected_llm)
                     # Ensure we set the role, content, and provider keys consistently
                     st.session_state.messages.append(
                         {"role": "assistant", "content": analysis_result, "provider": selected_llm})
                     
-                    st.session_state.research_prompt_input_key = ""
+                    # Clear it for the next run without causing the API error,
+                    # we do this by deleting the key, which resets it safely.
+                    del st.session_state["research_prompt_input_key"]
                     st.rerun()
                 else:
                     st.warning("Please enter a prompt for analysis.")
@@ -671,13 +677,14 @@ with st.sidebar:
                 "Ask the AI to analyze your batch results (optionally with uploaded doc):",
                 placeholder=OUTPUT_ANALYSIS_PROMPT_TEMPLATE,
                 height=200,
-                value=st.session_state.output_research_prompt_input_key,
-                key="output_research_prompt_input_key_ui"
+                key="output_research_prompt_input_key"
             )
             
             if st.button("Run Analysis", use_container_width=True, key="run_output_analysis"):
-                if output_research_prompt.strip():
-                    user_msg = f"**[Deep Research Analysis: Template Output]**\n{output_research_prompt}"
+                active_prompt = st.session_state.output_research_prompt_input_key
+                
+                if active_prompt.strip():
+                    user_msg = f"**[Deep Research Analysis: Template Output]**\n{active_prompt}"
                     if uploaded_output_docx:
                         user_msg += f"\n*(Context includes: {uploaded_output_docx.name})*"
                     
@@ -688,13 +695,13 @@ with st.sidebar:
                         if doc_context:
                             combined_context += f"--- ADDITIONAL DOCUMENT CONTEXT ({uploaded_output_docx.name}) ---\n{doc_context}\n\n"
                         
-                        full_prompt = f"Here is the context for analysis:\n\n{combined_context}\n\nBased ONLY on the data provided above, please answer the following request:\n{output_research_prompt}"
+                        full_prompt = f"Here is the context for analysis:\n\n{combined_context}\n\nBased ONLY on the data provided above, please answer the following request:\n{active_prompt}"
                         analysis_result = analyze_with_llm(full_prompt, selected_llm)
                     
                     st.session_state.messages.append(
                         {"role": "assistant", "content": analysis_result, "provider": selected_llm})
                     
-                    st.session_state.output_research_prompt_input_key = ""
+                    del st.session_state["output_research_prompt_input_key"]
                     st.rerun()
                 else:
                     st.warning("Please enter a prompt for analysis.")
@@ -713,12 +720,13 @@ with st.sidebar:
             "Prompt for Recommendations:",
             placeholder=QUERY_RECOMMENDATION_PROMPT_TEMPLATE,
             height=150,
-            value=st.session_state.recommendation_prompt_input_key,
-            key="recommendation_prompt_input_key_ui"
+            key="recommendation_prompt_input_key"
         )
         
         if st.button("Generate Query Recommendations", use_container_width=True):
-            if recommendation_prompt.strip():
+            active_prompt = st.session_state.recommendation_prompt_input_key
+            
+            if active_prompt.strip():
                 if not uploaded_md_files:
                      st.warning("Please upload at least one context file.")
                 else:
@@ -730,20 +738,20 @@ with st.sidebar:
                         except Exception as e:
                              st.error(f"Error reading {file.name}: {e}")
                     
-                    user_msg = f"**[Query Recommendations]**\n{recommendation_prompt}\n*(Using {len(uploaded_md_files)} uploaded context file(s))*"
+                    user_msg = f"**[Query Recommendations]**\n{active_prompt}\n*(Using {len(uploaded_md_files)} uploaded context file(s))*"
                     st.session_state.messages.append({"role": "user", "content": user_msg})
                     
                     with st.spinner(f"Generating recommendations with {selected_llm.capitalize()}..."):
-                        full_prompt = f"Here is the context for analysis:\n\n{context_content}\n\nBased on the data provided above, please answer the following request:\n{recommendation_prompt}"
+                        full_prompt = f"Here is the context for analysis:\n\n{context_content}\n\nBased on the data provided above, please answer the following request:\n{active_prompt}"
                         recommendation_result = analyze_with_llm(full_prompt, selected_llm)
                         
                         # Save the recommendation
-                        append_to_recommendation_file(recommendation_prompt, recommendation_result, selected_llm)
+                        append_to_recommendation_file(active_prompt, recommendation_result, selected_llm)
 
                     st.session_state.messages.append(
                         {"role": "assistant", "content": recommendation_result, "provider": selected_llm})
                         
-                    st.session_state.recommendation_prompt_input_key = ""
+                    del st.session_state["recommendation_prompt_input_key"]
                     st.rerun()
             else:
                 st.warning("Please enter a prompt.")
